@@ -7,9 +7,8 @@ admin.site.register(models.Upload_File)
 admin.site.register(models.Upload_File2)
 
 
-
 class Model1Admin(admin.ModelAdmin):
-    search_fields = ['model_name']
+    search_fields = ['model_name', 'mark__mark_name']
     list_filter = ['model_name']
     sortable_by = ['file_id']
 

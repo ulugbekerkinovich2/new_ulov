@@ -4,12 +4,14 @@ from datetime import datetime
 import sqlite3
 
 
+
 def clean_product_name(product_name):
     # Remove unwanted characters from the product name using regular expressions
     return re.sub(r'[\"\'\[\]/,()!?:;«»–]', '', product_name).lower()
 
 
 def extract_file_data_2022(file_name, file_id):
+    from basic_app.models import DATA22, Model1, Mark
     file_id_ = int(file_id)
     print(file_name)
     print('keldi 2022')
@@ -28,8 +30,14 @@ def extract_file_data_2022(file_name, file_id):
             product_name = clean_product_name(str(product_name)).lower()
             measure = data[i][8]
             country = data[i][13]
-            sana = str(data[i][1]).split('/')[1].replace('-', '.')
-            date_format = "%d.%m.%Y"
+            # print(data[i][1])
+            sana = str(data[i][1]).split('/')[1].replace('.', '.')
+            # try:
+            #     sana = str(data[i][1]).split('/')[1].replace('.', '.')
+            # except:
+            #     print(sana)
+            #     print('sana topilmadi')
+            # print(sana, '------------------->Accreditation date')
             if measure != 'Количество штук':
                 continue
 
@@ -40,28 +48,50 @@ def extract_file_data_2022(file_name, file_id):
                     continue
 
                 if f" {model_name.lower()} " in product_name and len(model_name) > 3:
-                    print(sana, '------------------->Accreditation date')
+
                     print(country, '------------------->Mamlakat')
                     print(model_name, '-------------->', mark_name, '\n')
                     print(product_name, '\n')
                     print('\t\t', k, "\033[36m" + model_name.lower() + "\033[0m\n" + 'topildi\n')
-                    date_obj = datetime.strptime(sana, date_format)
-                    formatted_date = date_obj.date()
+                    date_obj = datetime.strptime(sana, "%d.%m.%Y").date()
+                    print(date_obj, '------------------->Accreditation date')
                     k += 1
-                    sql = """
-                        INSERT INTO data22 (sana, model_id, mark_id, file_id_id, country)
-                        VALUES (?, (SELECT id FROM model1 WHERE model_name = ?),
-                                (SELECT id FROM mark WHERE mark_name = ?), ?, ?)
-                    """
+                    try:
+                        model_instance = Model1.objects.filter(model_name=model_name).first()
+                        mark_instance = Mark.objects.filter(mark_name=mark_name).first()
+                        if model_instance and mark_instance:
+                            data22_instance = DATA22.objects.create(
+                                time=datetime.now(),
+                                file_id_id=file_id_,
+                                sana=date_obj,
+                                model=model_instance,
+                                mark=mark_instance,
+                                country=country
+                            )
+                            data22_instance.save()
+                        else:
+                            print('Model1 or Mark instance not found.')
+                    except Exception as e:
+                        print('Error:', str(e))
+                        continue
+                    # serializer = Data22serializer(data={
+                    #     'sana': formatted_date,
+                    #     'model_id': model_name,
+                    #     'mark_id': mark_name,
+                    #     'file_id_id': file_id_,
+                    #     'country': country,
+                    #     'time': datetime.now()
+                    # })
 
-                    # Execute the SQL query with data values
-                    cursor.execute(sql, (formatted_date, model_name, mark_name, file_id_, country))
-
-        # Commit the changes to the database
-    conn.commit()
+                    # if serializer.is_valid():
+                    #     serializer.save()
+                    # else:
+                    #     print(serializer.errors)
+                    #     print('not saved')
+                    #     continue
 
     cursor.close()
-    print('done')
+    return {'status': 'ok'}
 
 # Example usage:
 # extract_file_data_2022(r'D:\Downloads\Там._база_2022_г.3_2.xls', 123)  # Replace 123 with the actual file_id value

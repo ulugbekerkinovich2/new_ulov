@@ -20,12 +20,10 @@ class Upload_File(models.Model):
 
 # Post-save signal handler
 @receiver(post_save, sender=Upload_File)
-def upload_file_post_save(sender, instance, created, **kwargs):
-    if instance.file:
-        file_name = instance.file.path
-        extract_file_data_2021(file_name, file_id=instance.id)
-    else:
-        print('not created')
+def upload_file2_post_save(sender, instance, created, **kwargs):
+    if created and instance.file:
+        extract_file_data_2021(file_name=instance.file.path, file_id=instance.id)
+        return {'status': 'ok'}
 
 
 class Upload_File2(models.Model):
@@ -41,13 +39,9 @@ class Upload_File2(models.Model):
 
 @receiver(post_save, sender=Upload_File2)
 def upload_file2_post_save(sender, instance, created, **kwargs):
-    if instance.file:
-        print('instance.id -->', instance.id)
-        file_name = instance.file.path
-        print('file_name -->', file_name)
-        extract_file_data_2022(file_name, file_id=instance.id)
-    else:
-        print('not created')
+    if created and instance.file:
+        extract_file_data_2022(file_name=instance.file.path, file_id=instance.id)
+        return {'status': 'ok'}
 
 
 class Mark(models.Model):
